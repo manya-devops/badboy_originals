@@ -725,6 +725,101 @@ export default function App() {
             </div>
           </section>
 
+          {/* Featured Collections */}
+          {!searchQuery && (
+            <section className="py-24 px-6">
+              <div className="max-w-7xl mx-auto">
+                <h2 className="text-3xl md:text-4xl font-display font-bold mb-12 text-white">Featured Collections</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  {/* Collection 1 */}
+                  <div className="bg-[#0a0a0a] border border-white/5 rounded-[32px] p-10 md:p-14 flex flex-col items-start justify-center min-h-[340px] shadow-2xl transition-transform hover:scale-[1.02] duration-500 group">
+                    <span className="bg-white/5 border border-white/10 px-4 py-1.5 rounded-full text-white/50 text-[10px] font-bold uppercase tracking-wider mb-6">
+                      Featured Collection
+                    </span>
+                    <h3 className="text-4xl md:text-5xl font-bold text-white mb-4 leading-tight">
+                      Urban Techwear
+                    </h3>
+                    <p className="text-white/40 text-sm font-medium mb-10">
+                      12 Products Available
+                    </p>
+                    <button 
+                      onClick={() => {
+                        setCurrentView('all-products');
+                        window.scrollTo(0, 0);
+                      }}
+                      className="bg-gradient-to-br from-zinc-800 to-black hover:from-black hover:to-zinc-800 text-white border border-white/10 px-8 py-3.5 rounded-full font-bold text-sm transition-all shadow-xl active:scale-95"
+                    >
+                      Shop Collection
+                    </button>
+                  </div>
+
+                  {/* Collection 2 */}
+                  <div className="bg-[#0a0a0a] border border-white/5 rounded-[32px] p-10 md:p-14 flex flex-col items-start justify-center min-h-[340px] shadow-2xl transition-transform hover:scale-[1.02] duration-500 group">
+                    <span className="bg-white/5 border border-white/10 px-4 py-1.5 rounded-full text-white/50 text-[10px] font-bold uppercase tracking-wider mb-6">
+                      Featured Collection
+                    </span>
+                    <h3 className="text-4xl md:text-5xl font-bold text-white mb-4 leading-tight">
+                      Cyber Accessories
+                    </h3>
+                    <p className="text-white/40 text-sm font-medium mb-10">
+                      8 Products Available
+                    </p>
+                    <button 
+                      onClick={() => {
+                        setCurrentView('all-products');
+                        window.scrollTo(0, 0);
+                      }}
+                      className="bg-gradient-to-br from-zinc-800 to-black hover:from-black hover:to-zinc-800 text-white border border-white/10 px-8 py-3.5 rounded-full font-bold text-sm transition-all shadow-xl active:scale-95"
+                    >
+                      Shop Collection
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </section>
+          )}
+
+          {/* Trending Products */}
+          {!searchQuery && (
+            <section className="py-32 px-6 bg-white/5">
+              <div className="max-w-7xl mx-auto">
+                <div className="flex items-end justify-between mb-16">
+                  <div>
+                    <span className="text-xs font-bold tracking-[0.3em] uppercase text-white/30 mb-2 block">What's Hot</span>
+                    <h2 className="text-4xl md:text-5xl font-display font-bold uppercase tracking-tight">Trending Now</h2>
+                  </div>
+                  <button 
+                    onClick={() => {
+                      setCurrentView('all-products');
+                      window.scrollTo(0, 0);
+                    }}
+                    className="hidden sm:flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-white/50 hover:text-white transition-colors"
+                  >
+                    View All <ArrowRight size={16} />
+                  </button>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-12">
+                  {products
+                    .slice(4, 8)
+                    .map((product) => (
+                      <ProductCard 
+                        key={product.id}
+                        product={product}
+                        onAddToCart={addToCart}
+                        onToggleWishlist={toggleWishlist}
+                        isWishlisted={wishlist.includes(product.id)}
+                        onClick={() => {
+                          setSelectedProduct(product);
+                          setCurrentView('product');
+                          window.scrollTo(0, 0);
+                        }}
+                      />
+                    ))}
+                </div>
+              </div>
+            </section>
+          )}
+
           {/* Product Grid */}
           <section className="py-32 px-6">
             <div className="max-w-7xl mx-auto">
@@ -1068,7 +1163,8 @@ export default function App() {
         </section>
       )}
 
-      {/* Features */}
+    
+          {/* Features */}
           <section className="py-24 px-6 sm:px-10">
             <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-16">
               <div className="flex flex-col items-center text-center gap-5">

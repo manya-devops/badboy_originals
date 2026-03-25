@@ -1,0 +1,122 @@
+{% extends 'custom_admin/base_admin.html' %}
+
+{% block title %}Products - Admin{% endblock %}
+{% block header %}Products{% endblock %}
+
+{% block content %}
+<div class="mb-6 flex justify-between items-center">
+    <div>
+        <h1 class="text-xl font-bold text-gray-800">Product List</h1>
+        <p class="text-sm text-gray-600">Manage your product catalog</p>
+    </div>
+    <a href="{% url 'custom_admin:product_add' %}"
+        class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition duration-200">
+        + Add Product
+    </a>
+</div>
+
+<form method="get" class="mb-4">
+    <div class="flex">
+        <input type="text" name="q" value="{{ query|default:'' }}" placeholder="Search products..."
+            class="w-full px-4 py-2 border rounded-l-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+        <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-r-lg hover:bg-blue-700">Search</button>
+    </div>
+</form>
+
+<div class="bg-white rounded-lg shadow overflow-hidden">
+    <table class="min-w-full leading-normal">
+        <thead>
+            <tr>
+                <th
+                    class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                    Product
+                </th>
+                <th
+                    class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                    Price
+                </th>
+                <th
+                    class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                    Stock
+                </th>
+                <th
+                    class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                    Status
+                </th>
+                <th
+                    class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                    Actions
+                </th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for product in products %}
+            <tr>
+                <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0 w-10 h-10">
+                            {% if product.image %}
+                            <img class="w-full h-full object-cover rounded" src="{{ product.image.url }}" alt="" />
+                            {% else %}
+                            <div
+                                class="w-full h-full bg-gray-300 rounded flex items-center justify-center text-gray-500 text-xs">
+                                No Img</div>
+                            {% endif %}
+                        </div>
+                        <div class="ml-3">
+                            <p class="text-gray-900 whitespace-no-wrap font-medium">
+                                {{ product.name }}
+                                {% if product.is_featured %}
+                                <span
+                                    class="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800">
+                                    Featured
+                                </span>
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+                </td>
+                <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm">
+                    {% comment %} <div class="flex flex-col">
+                        {% if product.discounted_price %}
+                        <span class="text-xs text-gray-500 line-through">₹{{ product.price }}</span>
+                        <span class="text-gray-900 font-bold">₹{{ product.discounted_price }}</span>
+                        {% else %}
+                        <span class="text-gray-900">₹{{ product.price }}</span>
+                        {% endif %}
+                    </div> {% endcomment %}
+                    <div class="flex flex-col">
+                        {% if product.discount_percentage > 0 %}
+                            <span class="text-xs text-gray-500 line-through">₹{{ product.price|floatformat:2 }}</span>
+                            <span class="text-gray-900 font-bold">₹{{ product.final_price|floatformat:2 }}</span>
+                            <span class="text-xs text-green-600 font-medium">{{ product.discount_percentage }}% OFF</span>
+                        {% else %}
+                            <span class="text-gray-900">₹{{ product.price|floatformat:2 }}</span>
+                        {% endif %}
+                    </div>
+                </td>
+                <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm">
+                    <p class="text-gray-900 whitespace-no-wrap">{{ product.stock }}</p>
+                </td>
+                <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm">
+                    <span
+                        class="relative inline-block px-3 py-1 font-semibold leading-tight {% if product.is_active %}text-green-900{% else %}text-red-900{% endif %}">
+                        <span aria-hidden="true"
+                            class="absolute inset-0 {% if product.is_active %}bg-green-200{% else %}bg-red-200{% endif %} opacity-50 rounded-full"></span>
+                        <span class="relative">{% if product.is_active %}Active{% else %}Inactive{% endif %}</span>
+                    </span>
+                </td>
+                <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm">
+                    <div class="flex space-x-3">
+                        <a href="{% url 'custom_admin:product_edit' product.id %}"
+                            class="text-blue-600 hover:text-blue-900">Edit</a>
+                        <a href="{% url 'custom_admin:product_delete' product.id %}"
+                            class="text-red-600 hover:text-red-900">Delete</a>
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

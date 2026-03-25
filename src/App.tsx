@@ -23,6 +23,11 @@ import {
   ArrowLeft,
   Star
 } from 'lucide-react';
+function getCookie(name: string) {
+  let value = `; ${document.cookie}`;
+  let parts = value.split(`; ${name}=`);
+  if (parts.length === 2) return parts.pop()?.split(";").shift();
+}
 import { PRODUCTS } from './constants';
 import { Product, CartItem, User as UserType } from './types';
 
@@ -305,7 +310,7 @@ const ProductDetail = ({
                 className="w-full h-full"
               />
             </div>
-            <div className="grid grid-cols-3 gap-4">
+            {/* <div className="grid grid-cols-3 gap-4">
               {[1, 2, 3].map((i) => (
                 <div key={i} className="aspect-square bg-[#111] rounded-xl overflow-hidden border border-white/5 opacity-40 hover:opacity-100 transition-opacity cursor-pointer">
                   <img 
@@ -316,6 +321,21 @@ const ProductDetail = ({
                   />
                 </div>
               ))}
+            </div> */}
+            <div className="grid grid-cols-3 gap-4">
+              {product.images?.length > 0 ? (
+                product.images.map((img: any, index: number) => (
+                  <div key={index} className="aspect-square bg-[#111] rounded-xl overflow-hidden border border-white/5">
+                    <img
+                      src={img.image}
+                      alt={`view ${index}`}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                ))
+              ) : (
+                <p className="text-white/30 text-sm">No extra images</p>
+              )}
             </div>
           </div>
 
@@ -427,13 +447,14 @@ const ProductDetail = ({
 };
 
 export default function App() {
-  const [products, setProducts] = useState<Product[]>(PRODUCTS);
+  const [products, setProducts] = useState<Product[]>([]);
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [isRegistering, setIsRegistering] = useState(false);
   const [isResettingPassword, setIsResettingPassword] = useState(false);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [wishlist, setWishlist] = useState<string[]>([]);
   const [user, setUser] = useState<UserType | null>(null);
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [currentView, setCurrentView] = useState<'home' | 'wishlist' | 'cart' | 'product' | 'all-products'>('home');
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
@@ -441,12 +462,73 @@ export default function App() {
   const [isSearchVisible, setIsSearchVisible] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [authEmail, setAuthEmail] = useState('');
+  const [authPassword, setAuthPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [error, setError] = useState("");
   const [resetEmailSent, setResetEmailSent] = useState(false);
+  const [fullName, setFullName] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 50);
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+  useEffect(() => {
+    fetch("http://127.0.0.1:8000/api/auth/get-csrf/", {
+      credentials: "include",
+    });
+  }, []);
+
+  useEffect(() => {
+    const checkUser = async () => {
+      try {
+        const res = await fetch("http://127.0.0.1:8000/api/auth/profile/", {
+          credentials: "include"
+        });
+
+        if (res.status === 403 || res.status === 401) {
+          setUser(null);  // not logged in
+          return;
+        }
+
+        const data = await res.json();
+
+        setUser({
+          name: data.full_name || data.username,
+          email: data.username
+        });
+
+      } catch (err) {
+        setUser(null);
+      }
+    };
+
+    checkUser();
+  }, []);
+
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        const res = await fetch("http://127.0.0.1:8000/api/products/");
+        const data = await res.json();
+        // map backend → frontend format
+        const formatted = data.map((item: any) => ({
+          id: item.id.toString(),
+          name: item.name,
+          description: item.description,
+          price: Number(item.final_price), // use final_price
+          originalPrice: item.price ? Number(item.price) : null,
+          image: item.image_url, // IMPORTANT
+          images: item.images || [],
+          reviews: []
+        }));
+        setProducts(formatted);
+      } catch (err) {
+        console.error("Error fetching products:", err);
+      }
+    };
+    fetchProducts();
   }, []);
 
   const toggleAuthMode = () => {
@@ -454,18 +536,111 @@ export default function App() {
     setIsResettingPassword(false);
   };
 
-  const handleAuthSubmit = (e: React.FormEvent) => {
+  const handleAuthSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (isResettingPassword) {
       handleForgotPassword();
       return;
     }
-    // In a real app, this would call an API
-    setUser({ name: 'Guest User', email: authEmail || 'guest@example.com' });
-    setIsLoginOpen(false);
-    setIsRegistering(false);
-    setIsResettingPassword(false);
-    setAuthEmail('');
+    if (isRegistering && authPassword !== confirmPassword) {
+      setError("Passwords do not match");
+      return;
+    }
+    try {
+    const url = isRegistering
+      ? "http://127.0.0.1:8000/api/auth/register/"
+      : "http://127.0.0.1:8000/api/auth/login/";
+
+    const payload = isRegistering
+      ? {
+          email: authEmail,
+          password: authPassword,
+          confirm_password: confirmPassword, 
+          full_name: fullName,
+          phone: phoneNumber
+        }
+      : {
+          username: authEmail,
+          password: authPassword,
+        };
+    await fetch("http://127.0.0.1:8000/api/auth/get-csrf/", {
+      credentials: "include",
+    });
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-CSRFToken": getCookie("csrftoken") || "",
+      },
+      credentials: "include",
+      body: JSON.stringify(payload),
+    });
+
+    let data;
+    try {
+      data = await response.json();
+    } catch {
+      throw new Error("Invalid server response");
+    }
+
+    if (response.ok) {
+      // In a real app, this would call an API
+      setUser({ name: data.full_name || data.username, email: data.username });
+      const profileRes = await fetch("http://127.0.0.1:8000/api/auth/profile/", {
+        credentials: "include",
+      });
+
+      if (profileRes.ok) {
+        const profileData = await profileRes.json();
+
+        setUser({
+          name: profileData.full_name,
+          email: profileData.username,
+        });
+      }
+      setError("");
+      setIsLoginOpen(false);
+      setIsRegistering(false);
+      setIsResettingPassword(false);
+      setAuthEmail('');
+      setAuthPassword("");
+      setConfirmPassword('');
+      setFullName('');
+      setPhoneNumber('');
+      } else {
+        const errorMessage =
+        data.email?.[0] ||
+        data.username?.[0] ||
+        data.password?.[0] ||
+        data.phone?.[0] ||
+        data.full_name?.[0] ||
+        data.non_field_errors?.[0] ||
+        "Something went wrong";
+
+      setError(errorMessage);
+      }
+
+    } catch (err) {
+      console.error(err);
+    }
+      };
+
+  const handleLogout = async () => {
+    try {
+      await fetch("http://127.0.0.1:8000/api/auth/logout/", {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "X-CSRFToken": getCookie("csrftoken") || "",
+        },
+      });
+    } catch (err) {
+      console.log("Logout error", err);
+    }
+
+    // ALWAYS update UI
+    setUser(null);
+    setIsUserMenuOpen(false);
   };
 
   const [resetEmailError, setResetEmailError] = useState(false);
@@ -664,8 +839,15 @@ export default function App() {
                 </span>
               )}
             </button>
+            <div className="relative">
             <button 
-              onClick={() => setIsLoginOpen(true)}
+              onClick={() => {
+                if (user) {
+                  setIsUserMenuOpen(!isUserMenuOpen);
+                } else {
+                  setIsLoginOpen(true);
+                }
+              }}
               className="text-white/70 hover:text-white transition-colors flex items-center gap-2 cursor-pointer"
             >
               <User size={18} className="sm:w-5 sm:h-5" />
@@ -673,6 +855,19 @@ export default function App() {
                 {user ? user.name : 'Login'}
               </span>
             </button>
+            {user && isUserMenuOpen && (
+              <div className="absolute right-0 top-10 bg-black border border-white/10 rounded-lg p-3 w-40 z-50">
+                <p className="text-xs text-white/50 mb-2">{user.email}</p>
+
+                <button
+                  onClick={handleLogout}
+                  className="w-full text-left text-sm text-red-400 hover:text-red-300"
+                >
+                  Logout
+                </button>
+              </div>
+            )}
+           </div>
           </div>
         </div>
       </nav>
@@ -1215,6 +1410,8 @@ export default function App() {
                           <input 
                             type="text" 
                             required
+                            value={fullName}
+                            onChange={(e) => setFullName(e.target.value)}
                             className="w-full bg-white/5 border border-white/10 px-5 py-3.5 text-sm tracking-wider focus:outline-none focus:border-white/30 rounded-xl transition-all"
                             placeholder="John Doe"
                           />
@@ -1224,6 +1421,8 @@ export default function App() {
                           <input 
                             type="tel" 
                             required
+                            value={phoneNumber}
+                            onChange={(e) => setPhoneNumber(e.target.value)}
                             className="w-full bg-white/5 border border-white/10 px-5 py-3.5 text-sm tracking-wider focus:outline-none focus:border-white/30 rounded-xl transition-all"
                             placeholder="+1 (555) 000-0000"
                           />
@@ -1248,6 +1447,8 @@ export default function App() {
                       <input 
                         type="password" 
                         required
+                        value={authPassword}
+                        onChange={(e) => setAuthPassword(e.target.value)}
                         className="w-full bg-white/5 border border-white/10 px-5 py-3.5 text-sm tracking-wider focus:outline-none focus:border-white/30 rounded-xl transition-all"
                         placeholder="••••••••"
                       />
@@ -1275,14 +1476,23 @@ export default function App() {
                     <input 
                       type="password" 
                       required
+                      value={confirmPassword}
+                      onChange={(e) => {
+                        setConfirmPassword(e.target.value);
+                        setError("");
+                      }}
                       className="w-full bg-white/5 border border-white/10 px-5 py-3.5 text-sm tracking-wider focus:outline-none focus:border-white/30 rounded-xl transition-all"
                       placeholder="••••••••"
                     />
                   </div>
                 )}
 
+                {error && (
+                  <p className="text-red-400 text-xs text-center">{error}</p>
+                )}
+
                 <div className="flex flex-col gap-4">
-                  <button className="btn-primary w-full py-4 text-sm mt-2">
+                  <button type="submit" className="btn-primary w-full py-4 text-sm mt-2">
                     {isResettingPassword ? 'Send Reset Link' : isRegistering ? 'Create Account' : 'Sign In'}
                   </button>
                   

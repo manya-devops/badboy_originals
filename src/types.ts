@@ -12,6 +12,7 @@ export interface Product {
   price: number;
   originalPrice?: number;
   image: string;
+  images?: { image: string }[];
   description: string;
   category: 'Hoodies' | 'T-Shirts' | 'Jackets' | 'Pants' | 'Shirts' | 'Shorts';
   reviews?: Review[];

@@ -4,6 +4,7 @@ from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.auth.models import User
 from django.db.models import Sum, Count
 from django.db.models.functions import TruncMonth
+from ecommerce.models import Order
 import json
 from ecommerce.models import Product, ProductImage
 from django.db.models import Q
@@ -45,10 +46,11 @@ def admin_login(request):
 @user_passes_test(is_admin)
 def dashboard(request):
     # Stats
-    # total_sales = Order.objects.aggregate(total=Sum("total_price"))["total"] or 0
-    # total_orders = Order.objects.count()
+    total_sales = (
+        Order.objects.filter(status__in=["PAID", "PROCESSING", "SHIPPED", "DELIVERED"]).aggregate(total=Sum("total_price"))["total"] or 0)
+    total_orders = Order.objects.count()
     total_products = Product.objects.count()
-    # total_customers = User.objects.filter(is_staff=False).count()
+    total_customers = User.objects.filter(is_staff=False).count()
     # returned_orders = Order.objects.filter(status="RETURNED").count()
 
     # # Monthly Sales Chart
@@ -64,10 +66,10 @@ def dashboard(request):
     # sales_data = [float(item["total"] or 0) for item in monthly_sales]
 
     context = {
-    #     "total_sales": total_sales,
-    #     "total_orders": total_orders,
+            "total_sales": total_sales,
+            "total_orders": total_orders,
             "total_products": total_products,
-    #     "total_customers": total_customers,
+            "total_customers": total_customers,
     #     "returned_orders": returned_orders,
     #     "sales_labels": json.dumps(sales_labels),
     #     "sales_data": json.dumps(sales_data),
@@ -151,3 +153,43 @@ def product_delete(request, pk):
     return render(request, "custom_admin/product_confirm_delete.html", {
         "product": product
     })
+    
+@login_required
+@user_passes_test(is_admin)
+def order_list(request):
+    status_filter = request.GET.get("status")
+    query = request.GET.get("q")
+    orders = Order.objects.select_related("user", "user__profile").all().order_by("-created_at")
+    # Filter by status
+    if status_filter:
+        orders = orders.filter(status=status_filter)
+    # Search (by user or order id)
+    if query:
+        orders = orders.filter(
+            Q(id__icontains=query) |
+            Q(user__username__icontains=query)
+        )
+    context = {
+        "orders": orders,
+        "status_choices": Order.STATUS_CHOICES,
+        "status_filter": status_filter,
+        "query": query,
+    }
+    return render(request, "custom_admin/order_list.html", context)
+
+@login_required
+@user_passes_test(is_admin)
+def order_detail(request, order_id):
+    order = get_object_or_404(Order, id=order_id)
+    # Update status
+    if request.method == "POST":
+        new_status = request.POST.get("status")
+        if new_status:
+            order.status = new_status
+            order.save()
+            return redirect("custom_admin:order_detail", order_id=order.id)
+    context = {
+        "order": order,
+        "status_choices": Order.STATUS_CHOICES,
+    }
+    return render(request, "custom_admin/order_detail.html", context)

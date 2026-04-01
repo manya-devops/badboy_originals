@@ -456,7 +456,7 @@ export default function App() {
   const [user, setUser] = useState<UserType | null>(null);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const [currentView, setCurrentView] = useState<'home' | 'wishlist' | 'cart' | 'product' | 'all-products'>('home');
+  const [currentView, setCurrentView] = useState<'home' | 'wishlist' | 'cart' | 'product' | 'all-products'| 'checkout'| 'profile'| 'orders'>('home');
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchVisible, setIsSearchVisible] = useState(false);
@@ -468,6 +468,41 @@ export default function App() {
   const [resetEmailSent, setResetEmailSent] = useState(false);
   const [fullName, setFullName] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
+  const [orderData, setOrderData] = useState<any>(null);
+  const [orders, setOrders] = useState<any[]>([]);
+  const [addresses, setAddresses] = useState<any[]>([]);
+  const [selectedAddress, setSelectedAddress] = useState<number | null>(null);
+  const [showAddressForm, setShowAddressForm] = useState(false);
+  const [addressForm, setAddressForm] = useState({full_name: "", phone_number: "", address_line: "", city: "", state: "", pincode: "", is_default: false});
+  const [addressError, setAddressError] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
+
+  const fetchCart = async () => {
+    try {
+      const res = await fetch("http://127.0.0.1:8000/api/cart/", {
+        credentials: "include",
+      });
+
+      const data = await res.json();
+      setCart(data);
+
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const fetchOrders = async () => {
+    try {
+      const res = await fetch("http://127.0.0.1:8000/api/my-orders/", {
+        credentials: "include",
+      });
+
+      const data = await res.json();
+      setOrders(data);
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 50);
@@ -530,6 +565,41 @@ export default function App() {
     };
     fetchProducts();
   }, []);
+
+  useEffect(() => {
+    fetchCart();
+  }, []);
+
+  useEffect(() => {
+    const fetchAddresses = async () => {
+      try {
+        const res = await fetch("http://127.0.0.1:8000/api/addresses/", {
+          credentials: "include",
+        });
+
+        const data = await res.json();
+        setAddresses(data);
+
+        // AUTO SELECT DEFAULT
+        const defaultAddr = data.find((a: any) => a.is_default);
+        if (defaultAddr) {
+          setSelectedAddress(defaultAddr.id);
+          getShipping(defaultAddr.id);
+        }
+
+      } catch (err) {
+        console.error(err);
+      }
+    };
+
+    fetchAddresses();
+  }, []);
+
+  useEffect(() => {
+    if (successMessage) {
+      setTimeout(() => setSuccessMessage(""), 4000);
+    }
+  }, [successMessage]);
 
   const toggleAuthMode = () => {
     setIsRegistering(!isRegistering);
@@ -656,31 +726,201 @@ export default function App() {
     setTimeout(() => setResetEmailSent(false), 5000);
   };
 
-  const addToCart = (product: Product) => {
-    setCart(prev => {
-      const existing = prev.find(item => item.id === product.id);
-      if (existing) {
-        return prev.map(item => 
-          item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item
-        );
-      }
-      return [...prev, { ...product, quantity: 1 }];
+  const addToCart = async (product: Product) => {
+    try {
+      await fetch("http://127.0.0.1:8000/api/cart/add/", {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+          "X-CSRFToken": getCookie("csrftoken") || "",
+        },
+        body: JSON.stringify({
+          product_id: product.id,
+          quantity: 1,
+        }),
+      });
+
+      fetchCart(); // refresh cart
+
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const removeFromCart = async(productId: string) => {
+    await fetch("http://127.0.0.1:8000/api/cart/remove/", {
+      method: "POST",
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/json",
+        "X-CSRFToken": getCookie("csrftoken") || "",
+      },
+      body: JSON.stringify({ product_id: productId }),
     });
-    setCurrentView('cart');
+
+    fetchCart();
   };
 
-  const removeFromCart = (productId: string) => {
-    setCart(prev => prev.filter(item => item.id !== productId));
+  const updateQuantity = async (productId: string, change: number) => {
+    try {
+      await fetch("http://127.0.0.1:8000/api/cart/add/", {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+          "X-CSRFToken": getCookie("csrftoken") || "",
+        },
+        body: JSON.stringify({
+          product_id: productId,
+          quantity: change,
+        }),
+      });
+
+      fetchCart(); // refresh cart
+
+    } catch (err) {
+      console.error(err);
+    }
   };
 
-  const updateQuantity = (productId: string, delta: number) => {
-    setCart(prev => prev.map(item => {
-      if (item.id === productId) {
-        const newQty = Math.max(1, item.quantity + delta);
-        return { ...item, quantity: newQty };
+  const createOrder = async () => {
+    try {
+
+
+      const res = await fetch("http://127.0.0.1:8000/api/create-order/", {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+          "X-CSRFToken": getCookie("csrftoken") || "",
+        },
+        body: JSON.stringify({
+          address_id: selectedAddress,
+        }),
+      });
+
+      const data = await res.json();
+
+
+
+      if (!res.ok) {
+        alert(data.error || "Order failed");
+        return null;
       }
-      return item;
-    }));
+
+      return data;   // DO NOT depend only on state
+    } catch (err) {
+      console.error("CREATE ORDER ERROR:", err);
+      return null;
+    }
+  };
+
+  const getShipping = async (addressId: number) => {
+    try {
+      const res = await fetch("http://127.0.0.1:8000/api/shipping-charge/", {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+          "X-CSRFToken": getCookie("csrftoken") || "",
+        },
+        body: JSON.stringify({ address_id: addressId }),
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        setOrderData(data);   //  updates UI instantly
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleAddAddress = async () => {
+    if (!addressForm.full_name || !addressForm.phone_number || !addressForm.pincode) {
+      setAddressError("All fields are required");
+      return;
+    }
+
+    if (addressForm.phone_number.length !== 10) {
+      setAddressError("Invalid phone number");
+      return;
+    }
+
+    try {
+      const res = await fetch("http://127.0.0.1:8000/api/addresses/add/", {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+          "X-CSRFToken": getCookie("csrftoken") || "",
+        },
+        body: JSON.stringify(addressForm),
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        setShowAddressForm(false);
+        setAddressForm({full_name: "", phone_number: "", address_line: "", city: "", state: "", pincode: "", is_default: false});
+
+        // refresh
+        const updated = await fetch("http://127.0.0.1:8000/api/addresses/", {
+          credentials: "include",
+        });
+        const list = await updated.json();
+        setAddresses(list);
+
+      } else {
+        setAddressError(data.error || "Error adding address");
+      }
+
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handlePayment = (data: any) => {
+    
+
+    const rzp = new (window as any).Razorpay({
+      key: data.razorpay_key,
+      amount: data.amount,
+      currency: "INR",
+      name: "Bad Boy Originals",
+      description: "Order Payment",
+      order_id: data.razorpay_order_id,
+
+      handler: async function (response: any) {
+        await fetch("http://127.0.0.1:8000/api/payment-success/", {
+          method: "POST",
+          credentials: "include",
+          headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": getCookie("csrftoken") || "",
+          },
+          body: JSON.stringify({
+            order_id: data.order_id,
+            razorpay_payment_id: response.razorpay_payment_id,
+            razorpay_order_id: response.razorpay_order_id,
+            razorpay_signature: response.razorpay_signature,
+          }),
+        });
+
+        setCurrentView("orders");
+        fetchOrders();
+        setSuccessMessage("Payment successful! Your order has been placed.");
+      },
+    });
+
+    rzp.on("payment.failed", function (response: any) {
+      console.log("FAILED:", response);
+      alert(response.error.description);
+    });
+
+    rzp.open();
   };
 
   const cartTotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
@@ -730,6 +970,57 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-[#050505] text-white selection:bg-white selection:text-black pt-20 sm:pt-24">
+
+      {showAddressForm && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50">
+          <div className="bg-[#111] p-8 rounded-xl w-full max-w-md">
+
+            <h3 className="text-lg font-bold mb-4">Add Address</h3>
+
+            <div className="space-y-3">
+              <input placeholder="Full Name"
+                onChange={e => setAddressForm({...addressForm, full_name: e.target.value})}
+                className="w-full p-2 bg-black border border-white/10" />
+
+              <input placeholder="Phone"
+                onChange={e => setAddressForm({...addressForm, phone_number: e.target.value})}
+                className="w-full p-2 bg-black border border-white/10" />
+
+              <input placeholder="Address"
+                onChange={e => setAddressForm({...addressForm, address_line: e.target.value})}
+                className="w-full p-2 bg-black border border-white/10" />
+
+              <input placeholder="City"
+                onChange={e => setAddressForm({...addressForm, city: e.target.value})}
+                className="w-full p-2 bg-black border border-white/10" />
+
+              <input placeholder="State"
+                onChange={e => setAddressForm({...addressForm, state: e.target.value})}
+                className="w-full p-2 bg-black border border-white/10" />
+
+              <input placeholder="Pincode"
+                onChange={e => setAddressForm({...addressForm, pincode: e.target.value})}
+                className="w-full p-2 bg-black border border-white/10" />
+            </div>
+
+            {addressError && (
+              <p className="text-red-400 text-xs mt-2">{addressError}</p>
+            )}
+
+            <div className="flex gap-4 mt-6">
+              <button onClick={handleAddAddress} className="btn-primary w-full">
+                Save
+              </button>
+
+              <button onClick={() => setShowAddressForm(false)} className="btn-secondary w-full">
+                Cancel
+              </button>
+            </div>
+
+          </div>
+        </div>
+      )}
+
       {/* Navigation */}
       <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-700 bg-nav-black/80 backdrop-blur-xl border-b border-white/5 ${scrolled ? 'py-3 shadow-2xl' : 'py-5'}`}>
         <div className="max-w-7xl mx-auto px-6 sm:px-10 flex items-center justify-between">
@@ -858,6 +1149,26 @@ export default function App() {
             {user && isUserMenuOpen && (
               <div className="absolute right-0 top-10 bg-black border border-white/10 rounded-lg p-3 w-40 z-50">
                 <p className="text-xs text-white/50 mb-2">{user.email}</p>
+
+                <button
+                  onClick={() => {
+                    setCurrentView('profile');
+                    setIsUserMenuOpen(false);
+                  }}
+                  className="w-full text-left text-sm text-white hover:text-white/70 mb-2"
+                >
+                  Profile
+                </button>
+                <button
+                  onClick={() => {
+                    setCurrentView('orders');
+                    fetchOrders();
+                    setIsUserMenuOpen(false);
+                  }}
+                  className="w-full text-left text-sm text-white hover:text-white/70 mb-2"
+                >
+                  My Orders
+                </button>
 
                 <button
                   onClick={handleLogout}
@@ -1205,6 +1516,237 @@ export default function App() {
             window.scrollTo(0, 0);
           }}
         />
+        
+        ) : currentView === 'profile' ? (
+          <section className="py-32 px-6 min-h-[70vh]">
+            <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-10">
+
+              {/* LEFT PROFILE CARD */}
+              <div className="glass p-8 rounded-2xl border border-white/5">
+                <h2 className="text-2xl font-bold mb-4">{user?.name}</h2>
+                <p className="text-white/40 text-sm mb-6">{user?.email}</p>
+
+                <button className="btn-primary w-full mb-4">Edit Profile</button>
+                <button onClick={() => {setCurrentView('orders'); fetchOrders();}} className="btn-secondary w-full">My Orders</button>
+              </div>
+
+              {/* RIGHT SIDE */}
+              <div className="lg:col-span-2 space-y-10">
+
+                {/* PROFILE INFO */}
+                <div className="glass p-8 rounded-2xl border border-white/5">
+                  <h3 className="text-xl font-bold mb-6">Profile Information</h3>
+
+                  <div className="space-y-4 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-white/40">Full Name</span>
+                      <span>{user?.name}</span>
+                    </div>
+
+                    <div className="flex justify-between">
+                      <span className="text-white/40">Email</span>
+                      <span>{user?.email}</span>
+                    </div>
+
+                    <div className="flex justify-between">
+                      <span className="text-white/40">Phone</span>
+                      <span>Not provided</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* SAVED ADDRESSES */}
+                <div className="glass p-8 rounded-2xl border border-white/5">
+                  <div className="flex justify-between items-center mb-6">
+                    <h3 className="text-xl font-bold">Saved Addresses</h3>
+                    <button onClick={() => setShowAddressForm(true)} className="btn-primary px-4 py-2 text-xs">
+                      + Add New Address
+                    </button>
+                  </div>
+
+                  {addresses.length === 0 ? (
+                    <p className="text-white/40 text-sm">No saved addresses yet.</p>
+                  ) : (
+                    addresses.map(addr => (
+                      <div key={addr.id} className="mb-4 p-3 border border-white/10">
+                        <p>{addr.full_name}</p>
+                        <p>{addr.phone}</p>
+                        <p>{addr.address}</p>
+                        {addr.is_default && <span className="text-green-400 text-xs">Default</span>}
+                      </div>
+                    ))
+                  )}
+                </div>
+
+              </div>
+            </div>
+          </section>
+        )
+
+        : currentView === 'orders' ? (
+        <>
+          {successMessage && (
+            <div className="bg-green-500/10 border border-green-500 text-green-400 p-3 rounded mb-6 text-sm">
+              {successMessage}
+            </div>
+          )}
+
+          <section className="py-32 px-6 min-h-[70vh]">
+            <div className="max-w-5xl mx-auto">
+
+              <h2 className="text-4xl font-bold mb-10">My Orders</h2>
+
+              {orders.length === 0 ? (
+                <p className="text-white/40">No orders yet.</p>
+              ) : (
+                <div className="space-y-6">
+                  {orders.map(order => (
+                    <div key={order.id} className="border border-white/10 p-6 rounded-xl">
+                      
+                      <div className="flex justify-between mb-4">
+                        <div>
+                          <p className="text-sm text-white/40">Order ID</p>
+                          <p className="font-bold">{order.order_number}</p>
+                        </div>
+
+                        <div>
+                          <p className="text-sm text-white/40">Status</p>
+                          <p className="text-green-400">{order.status}</p>
+                        </div>
+
+                        <div>
+                          <p className="text-sm text-white/40">Total</p>
+                          <p>₹{order.total_price}</p>
+                        </div>
+                      </div>
+
+                      {/* ITEMS */}
+                      <div className="space-y-3">
+                        {order.items.map((item: any, i: number) => (
+                          <div key={i} className="flex gap-4 items-center">
+                            <img src={item.image} className="w-16 h-16 object-cover" />
+                            <div>
+                              <p>{item.product_name}</p>
+                              <p className="text-xs text-white/40">
+                                Qty: {item.quantity} • ₹{item.price}
+                              </p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </section>
+        </>
+        )
+
+        : currentView === 'checkout' ? (
+          <section className="py-32 px-6 min-h-[70vh]">
+            <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-16">
+
+              {/* LEFT: ADDRESS */}
+              <div>
+                <h2 className="text-3xl font-bold mb-10 uppercase tracking-wider">
+                  Shipping Address
+                </h2>
+                <button
+                  onClick={() => setShowAddressForm(true)}
+                  className="btn-secondary px-3 py-2 text-xs"
+                >
+                  + Add Address
+                </button>
+
+                <div className="space-y-4">
+                  {addresses.length === 0 ? (
+                    <p className="text-white/40">No saved addresses</p>
+                  ) : (
+                    addresses.map(addr => (
+                      <div
+                        key={addr.id}
+                        onClick={async () => {setSelectedAddress(addr.id); await getShipping(addr.id); }}
+                        className={`p-4 border cursor-pointer ${
+                          selectedAddress === addr.id
+                            ? "border-white"
+                            : "border-white/10"
+                        }`}
+                      >
+                        <p>{addr.full_name}</p>
+                        <p>{addr.phone}</p>
+                        <p>{addr.address}</p>
+                        <p>{addr.city} - {addr.pincode}</p>
+
+                        {addr.is_default && (
+                          <span className="text-xs text-green-400">Default</span>
+                        )}
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+
+              {/* RIGHT: SUMMARY */}
+              <div className="glass p-10 rounded-2xl border border-white/5">
+                <h3 className="text-sm uppercase tracking-widest mb-6 text-white/40">
+                  Order Summary
+                </h3>
+
+                <div className="space-y-4 mb-6">
+                  {cart.map(item => (
+                    <div key={item.id} className="flex justify-between text-sm">
+                      <span>{item.name} × {item.quantity}</span>
+                      <span>₹{(item.price * item.quantity).toLocaleString()}</span>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="space-y-3 mb-6">
+                  <div className="flex justify-between text-sm">
+                    <span>Subtotal</span>
+                    <span>₹{orderData?.subtotal ?? cartTotal}</span>
+                  </div>
+
+                  <div className="flex justify-between text-sm">
+                    <span>Shipping</span>
+                    <span>₹{orderData?.shipping_fee ?? 0}</span>
+                  </div>
+                </div>
+
+                <div className="border-t border-white/10 pt-4 flex justify-between text-lg font-bold">
+                  <span>Total</span>
+                  <span>₹{orderData?.total_price ?? cartTotal}</span>
+                </div>
+                {!selectedAddress && (
+                  <p className="text-red-400 text-xs mb-2">
+                    Please select address
+                  </p>
+                )}
+                <button
+                  onClick={async () => {
+
+                    if (!selectedAddress) {
+                      alert("Please select address");
+                      return;
+                    }
+                  
+                    const res = await createOrder();   //  CREATE ORDER FIRST
+
+                    if (res) {
+                      handlePayment(res);                 // THEN PAYMENT
+                    }
+                  }}
+                  className="btn-primary w-full"
+                >
+                  Place Order
+                </button>
+              </div>
+
+            </div>
+          </section>
+
       ) : (
         /* Cart View (Page Style) */
         <section className="py-32 px-6 min-h-[70vh]">
@@ -1303,7 +1845,7 @@ export default function App() {
                         </motion.span>
                       </div>
                     </div>
-                    <button className="btn-primary w-full py-6 text-sm">
+                    <button onClick={() => setCurrentView('checkout')} className="btn-primary w-full py-6 text-sm">
                       Proceed to Checkout
                     </button>
                     <div className="mt-10 flex items-center justify-center gap-4 text-white/20">

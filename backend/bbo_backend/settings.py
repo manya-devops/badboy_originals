@@ -156,3 +156,11 @@ REST_FRAMEWORK = {
         'rest_framework.permissions.IsAuthenticated',
     ],
 }
+
+# Razorpay Settings
+RAZORPAY_KEY_ID = "rzp_test_N0l8MarxOd6PUU"
+RAZORPAY_KEY_SECRET = "HBln2hW9WXdLIJLiDrGUNqCy"
+
+# Shiprocket Configuration
+SHIPROCKET_EMAIL = "savula@zebrasurgicals.com"
+SHIPROCKET_PASSWORD = "rwAFK14D#^!vo&ko!3!HJyL*leMMfq32"

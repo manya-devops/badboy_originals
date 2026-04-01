@@ -37,7 +37,7 @@
                     class="block py-2.5 px-4 rounded transition duration-200 hover:bg-gray-700 {% if 'product' in request.resolver_match.url_name %}bg-gray-700{% endif %}">
                     Products
                 </a>
-                <a href="#"
+                <a href="{% url 'custom_admin:order_list' %}"
                     class="block py-2.5 px-4 rounded transition duration-200 hover:bg-gray-700 {% if 'order' in request.resolver_match.url_name %}bg-gray-700{% endif %}">
                     Orders
                 </a>
@@ -58,10 +58,10 @@
                     Offers
                 </a> {% endcomment %}
 
-                <a href="#"
+                {% comment %} <a href="#"
                     class="block py-2.5 px-4 rounded transition duration-200 hover:bg-gray-700 {% if 'audit' in request.resolver_match.url_name %}bg-gray-700{% endif %}">
                     Audit Logs
-                </a>
+                </a> {% endcomment %}
                 {% comment %} <a href="#"
                     class="block py-2.5 px-4 rounded transition duration-200 hover:bg-gray-700">
                     Customer Feedback

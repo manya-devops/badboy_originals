@@ -1,0 +1,113 @@
+{% extends 'custom_admin/base_admin.html' %}
+
+{% block title %}Orders - Admin{% endblock %}
+{% block header %}Orders{% endblock %}
+
+{% block content %}
+<div class="mb-6">
+    <h1 class="text-xl font-bold text-gray-800">Order List</h1>
+    <p class="text-sm text-gray-600">Track and manage customer orders</p>
+</div>
+
+<form method="get" class="mb-4">
+    <div class="flex space-x-2">
+        <select name="status"
+            class="px-4 py-2 border rounded-l-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+            <option value="">All Statuses</option>
+            {% for code, label in status_choices %}
+            <option value="{{ code }}" {% if status_filter == code %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+        </select>
+        <input type="text" name="q" value="{{ query|default:'' }}" placeholder="Search orders..."
+            class="w-full px-4 py-2 border-y border-r focus:outline-none focus:ring-2 focus:ring-blue-500">
+        <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-r-lg hover:bg-blue-700">Filter</button>
+    </div>
+</form>
+
+<div class="bg-white rounded-lg shadow overflow-hidden">
+    <table class="min-w-full leading-normal">
+        <thead>
+            <tr>
+                <th
+                    class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                    Order ID
+                </th>
+                <th
+                    class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                    Customer
+                </th>
+                <th
+                    class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                    Date
+                </th>
+                <th
+                    class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                    Total
+                </th>
+                <th
+                    class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                    Status
+                </th>
+                <th
+                    class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                    Tracking
+                </th>
+                <th
+                    class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                    Actions
+                </th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for order in orders %}
+            <tr>
+                <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm">
+                    <p class="text-gray-900 whitespace-no-wrap font-medium">#{{ order.id }}</p>
+                </td>
+                <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm">
+                    <p class="text-gray-900 whitespace-no-wrap">{{ order.user.profile.full_name|default:order.user.username }}</p>
+                </td>
+                <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm">
+                    <p class="text-gray-900 whitespace-no-wrap">{{ order.created_at|date:"M d, Y" }}</p>
+                </td>
+                <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm">
+                    <p class="text-gray-900 whitespace-no-wrap">₹{{ order.total_price }}</p>
+                </td>
+                <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm">
+                    <span class="relative inline-block px-3 py-1 font-semibold leading-tight 
+                        {% if order.status == 'DELIVERED' %}text-green-900 bg-green-200
+                        {% elif order.status == 'CANCELLED' %}text-red-900 bg-red-200
+                        {% elif order.status == 'SHIPPED' %}text-blue-900 bg-blue-200
+                        {% else %}text-orange-900 bg-orange-200{% endif %} rounded-full opacity-50">
+                        {{ order.get_status_display }}
+                    </span>
+                </td>
+                <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm">
+                    {% if order.return_awb_code %}
+                    <span class="text-xs font-bold text-red-600">Return: {{ order.return_status }}</span><br>
+                    <a href="https://shiprocket.co/tracking/{{ order.return_awb_code }}" target="_blank"
+                        class="text-blue-500 text-xs">Track Return</a>
+                    {% elif order.awb_code %}
+                    <span class="text-gray-900 text-xs">{{ order.courier_name }}</span><br>
+                    <a href="https://shiprocket.co/tracking/{{ order.awb_code }}" target="_blank"
+                        class="text-blue-500 text-xs hover:underline">{{ order.awb_code }}</a>
+                    {% else %}
+                    <span class="text-gray-400 text-xs">-</span>
+                    {% endif %}
+                </td>
+                <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm">
+                    <a href="{% url 'custom_admin:order_detail' order.id %}"
+                        class="text-blue-600 hover:text-blue-900 font-medium">View</a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="6" class="px-5 py-5 border-b border-gray-200 bg-white text-sm text-center">
+                    <p class="text-gray-500">No orders found.</p>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

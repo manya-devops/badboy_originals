@@ -1,0 +1,48 @@
+trigger:
+- master
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+variables:
+  nodeVersion: '18.x'
+  azureSubscription: 'MyAzureServiceConnection'
+  appName: 'badboy-clothing-app'
+
+steps:
+
+# Install Node
+- task: NodeTool@0
+  inputs:
+    versionSpec: $(nodeVersion)
+
+# Install dependencies (frontend + backend if Node-based)
+- script: |
+    npm install
+  displayName: "Install Dependencies"
+
+# Build frontend (Vite project)
+- script: |
+    npm run build
+  displayName: "Build Frontend"
+
+# Move build to backend
+- script: |
+    cp -r dist backend/
+  displayName: "Merge Frontend into Backend"
+
+# Archive
+- task: ArchiveFiles@2
+  inputs:
+    rootFolderOrFile: 'backend'
+    includeRootFolder: false
+    archiveType: 'zip'
+    archiveFile: '$(Build.ArtifactStagingDirectory)/app.zip'
+    replaceExistingArchive: true
+
+# Deploy
+- task: AzureWebApp@1
+  inputs:
+    azureSubscription: $(azureSubscription)
+    appName: $(appName)
+    package: '$(Build.ArtifactStagingDirectory)/app.zip'

@@ -6,7 +6,7 @@ pool:
 
 variables:
   nodeVersion: '18.x'
-  azureSubscription: 'arathcogfocus'
+  azureSubscription: 'MyAzureServiceConnection'
   appName: 'badboy-clothing-app'
 
 steps:

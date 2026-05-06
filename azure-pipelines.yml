@@ -6,7 +6,7 @@ pool:
 
 variables:
   nodeVersion: '18.x'
-  azureSubscription: 'MyAzureServiceConnection'
+  
   appName: 'badboy-clothing-app'
 
 steps:
@@ -40,9 +40,3 @@ steps:
     archiveFile: '$(Build.ArtifactStagingDirectory)/app.zip'
     replaceExistingArchive: true
 
-# Deploy
-- task: AzureWebApp@1
-  inputs:
-    azureSubscription: $(azureSubscription)
-    appName: $(appName)
-    package: '$(Build.ArtifactStagingDirectory)/app.zip'

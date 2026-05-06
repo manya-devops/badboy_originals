@@ -5,40 +5,33 @@ pool:
   vmImage: 'ubuntu-latest'
 
 variables:
-  nodeVersion: '18.x'
-  
-  appName: 'badboy-clothing-app'
+  nodeVersion: '20.x'
 
 steps:
 
-# Install Node
+# Install Node.js
 - task: NodeTool@0
   inputs:
     versionSpec: $(nodeVersion)
+  displayName: 'Install Node.js'
 
-# Install dependencies (frontend + backend if Node-based)
--- script: |
+# Install Dependencies
+- script: |
     npm cache clean --force
     rm -rf node_modules package-lock.json
     npm install
   displayName: 'Install Dependencies'
-  
-# Build frontend (Vite project)
+
+# Build Frontend
 - script: |
     npm run build
-  displayName: "Build Frontend"
+  displayName: 'Build Frontend'
 
-# Move build to backend
-- script: |
-    cp -r dist backend/
-  displayName: "Merge Frontend into Backend"
-
-# Archive
+# Archive Application
 - task: ArchiveFiles@2
   inputs:
-    rootFolderOrFile: 'backend'
+    rootFolderOrFile: '.'
     includeRootFolder: false
     archiveType: 'zip'
     archiveFile: '$(Build.ArtifactStagingDirectory)/app.zip'
     replaceExistingArchive: true
-

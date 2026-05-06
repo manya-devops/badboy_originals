@@ -17,10 +17,12 @@ steps:
     versionSpec: $(nodeVersion)
 
 # Install dependencies (frontend + backend if Node-based)
-- script: |
+-- script: |
+    npm cache clean --force
+    rm -rf node_modules package-lock.json
     npm install
-  displayName: "Install Dependencies"
-
+  displayName: 'Install Dependencies'
+  
 # Build frontend (Vite project)
 - script: |
     npm run build

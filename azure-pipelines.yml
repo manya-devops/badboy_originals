@@ -10,9 +10,9 @@ variables:
 steps:
 
 # Install Node.js
-- task: UseNode@1
+- task: NodeTool@0
   inputs:
-    versionSpec: '20.x'
+    versionSpec: $(nodeVersion)
   displayName: 'Install Node.js'
 
 # Install Dependencies

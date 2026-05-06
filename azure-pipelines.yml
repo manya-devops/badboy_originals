@@ -6,6 +6,8 @@ pool:
 
 variables:
   nodeVersion: '20.x'
+  azureSubscription: 'badboy-azure-rm'
+  appName: 'badboy-originals'
 
 steps:
 
@@ -35,3 +37,12 @@ steps:
     archiveType: 'zip'
     archiveFile: '$(Build.ArtifactStagingDirectory)/app.zip'
     replaceExistingArchive: true
+  displayName: 'Archive Application'
+
+# Deploy to Azure Web App
+- task: AzureWebApp@1
+  inputs:
+    azureSubscription: $(azureSubscription)
+    appName: $(appName)
+    package: '$(Build.ArtifactStagingDirectory)/app.zip'
+  displayName: 'Deploy to Azure Web App'

@@ -2,7 +2,7 @@ trigger:
 - ver-1.1.1
 
 pool:
-  vmImage: 'bbo-dev'
+  name: 'bbo-dev'
 
 variables:
   nodeVersion: '20.x'

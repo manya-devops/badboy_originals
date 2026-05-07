@@ -2,25 +2,50 @@ trigger:
 - ver-1.1.1
 
 pool:
-  name: bbo-dev
+  name: 'bbo-dev'
+
+variables:
+  nodeVersion: '20.x'
+  appName: 'badboy-originals'
 
 steps:
 
-- task: UseNode@1
+# Install Node.js
+- task: NodeTool@0
   inputs:
-    version: '18.x'
+    versionSpec: $(nodeVersion)
+  displayName: 'Install Node.js'
 
-- script: npm install
-  displayName: Install Dependencies
+# Install Dependencies
+- script: |
+    npm cache clean --force
+    rm -rf node_modules package-lock.json
+    npm install
+  displayName: 'Install Dependencies'
 
-- script: npm run build
-  displayName: Build Frontend
+# Build Frontend
+- script: |
+    npm run build
+  displayName: 'Build Frontend'
 
+# Deploy to Nginx
 - script: |
     sudo rm -rf /usr/share/nginx/html/*
     sudo cp -r dist/* /usr/share/nginx/html/
-  displayName: Deploy to Nginx
+  displayName: 'Deploy to Nginx'
 
-- script: sudo systemctl restart nginx
-  displayName: Restart Nginx
+# Restart Nginx
+- script: |
+    sudo systemctl restart nginx
+  displayName: 'Restart Nginx'
+
+# Archive Application
+- task: ArchiveFiles@2
+  inputs:
+    rootFolderOrFile: '.'
+    includeRootFolder: false
+    archiveType: 'zip'
+    archiveFile: '$(Build.ArtifactStagingDirectory)/app.zip'
+    replaceExistingArchive: true
+  displayName: 'Archive Application'
 

@@ -32,4 +32,3 @@ steps:
 - script: |
     sudo systemctl restart nginx
   displayName: 'Restart Nginx'
-

@@ -25,6 +25,15 @@ steps:
   displayName: 'Build Frontend'
 
 - script: |
+    cd backend
+    source venv/bin/activate
+    pip install -r requirements.txt
+    python manage.py migrate
+    python manage.py collectstatic --noinput
+    sudo systemctl restart gunicorn
+  displayName: 'Deploy Backend'
+
+- script: |
     sudo rm -rf /usr/share/nginx/html/*
     sudo cp -r dist/* /usr/share/nginx/html/
   displayName: 'Deploy to Nginx'

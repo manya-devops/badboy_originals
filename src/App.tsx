@@ -479,7 +479,7 @@ export default function App() {
 
   const fetchCart = async () => {
     try {
-      const res = await fetch("http://127.0.0.1:8000/api/cart/", {
+      const res = await fetch("http://3.107.59.142/api/cart/", {
         credentials: "include",
       });
 
@@ -493,7 +493,7 @@ export default function App() {
 
   const fetchOrders = async () => {
     try {
-      const res = await fetch("http://127.0.0.1:8000/api/my-orders/", {
+      const res = await fetch("http://3.107.59.142/api/my-orders/", {
         credentials: "include",
       });
 
@@ -510,7 +510,7 @@ export default function App() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
   useEffect(() => {
-    fetch("http://127.0.0.1:8000/api/auth/get-csrf/", {
+    fetch("http://3.107.59.142/api/auth/get-csrf/", {
       credentials: "include",
     });
   }, []);
@@ -518,7 +518,7 @@ export default function App() {
   useEffect(() => {
     const checkUser = async () => {
       try {
-        const res = await fetch("http://127.0.0.1:8000/api/auth/profile/", {
+        const res = await fetch("http://3.107.59.142/api/auth/profile/", {
           credentials: "include"
         });
 
@@ -545,7 +545,7 @@ export default function App() {
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const res = await fetch("http://127.0.0.1:8000/api/products/");
+        const res = await fetch("http://3.107.59.142/api/products/");
         const data = await res.json();
         // map backend → frontend format
         const formatted = data.map((item: any) => ({
@@ -573,7 +573,7 @@ export default function App() {
   useEffect(() => {
     const fetchAddresses = async () => {
       try {
-        const res = await fetch("http://127.0.0.1:8000/api/addresses/", {
+        const res = await fetch("http://3.107.59.142/api/addresses/", {
           credentials: "include",
         });
 
@@ -618,8 +618,8 @@ export default function App() {
     }
     try {
     const url = isRegistering
-      ? "http://127.0.0.1:8000/api/auth/register/"
-      : "http://127.0.0.1:8000/api/auth/login/";
+      ? "http://3.107.59.142/api/auth/register/"
+      : "http://3.107.59.142/api/auth/login/";
 
     const payload = isRegistering
       ? {
@@ -633,7 +633,7 @@ export default function App() {
           username: authEmail,
           password: authPassword,
         };
-    await fetch("http://127.0.0.1:8000/api/auth/get-csrf/", {
+    await fetch("http://3.107.59.142/api/auth/get-csrf/", {
       credentials: "include",
     });
     const response = await fetch(url, {
@@ -656,7 +656,7 @@ export default function App() {
     if (response.ok) {
       // In a real app, this would call an API
       setUser({ name: data.full_name || data.username, email: data.username });
-      const profileRes = await fetch("http://127.0.0.1:8000/api/auth/profile/", {
+      const profileRes = await fetch("http://3.107.59.142/api/auth/profile/", {
         credentials: "include",
       });
 
@@ -697,7 +697,7 @@ export default function App() {
 
   const handleLogout = async () => {
     try {
-      await fetch("http://127.0.0.1:8000/api/auth/logout/", {
+      await fetch("http://3.107.59.142/api/auth/logout/", {
         method: "POST",
         credentials: "include",
         headers: {
@@ -728,7 +728,7 @@ export default function App() {
 
   const addToCart = async (product: Product) => {
     try {
-      await fetch("http://127.0.0.1:8000/api/cart/add/", {
+      await fetch("http://3.107.59.142/api/cart/add/", {
         method: "POST",
         credentials: "include",
         headers: {
@@ -749,7 +749,7 @@ export default function App() {
   };
 
   const removeFromCart = async(productId: string) => {
-    await fetch("http://127.0.0.1:8000/api/cart/remove/", {
+    await fetch("http://3.107.59.142/api/cart/remove/", {
       method: "POST",
       credentials: "include",
       headers: {
@@ -764,7 +764,7 @@ export default function App() {
 
   const updateQuantity = async (productId: string, change: number) => {
     try {
-      await fetch("http://127.0.0.1:8000/api/cart/add/", {
+      await fetch("http://3.107.59.142/api/cart/add/", {
         method: "POST",
         credentials: "include",
         headers: {
@@ -788,7 +788,7 @@ export default function App() {
     try {
 
 
-      const res = await fetch("http://127.0.0.1:8000/api/create-order/", {
+      const res = await fetch("http://3.107.59.142/api/create-order/", {
         method: "POST",
         credentials: "include",
         headers: {
@@ -818,7 +818,7 @@ export default function App() {
 
   const getShipping = async (addressId: number) => {
     try {
-      const res = await fetch("http://127.0.0.1:8000/api/shipping-charge/", {
+      const res = await fetch("http://3.107.59.142/api/shipping-charge/", {
         method: "POST",
         credentials: "include",
         headers: {
@@ -850,7 +850,7 @@ export default function App() {
     }
 
     try {
-      const res = await fetch("http://127.0.0.1:8000/api/addresses/add/", {
+      const res = await fetch("http://3.107.59.142/api/addresses/add/", {
         method: "POST",
         credentials: "include",
         headers: {
@@ -867,7 +867,7 @@ export default function App() {
         setAddressForm({full_name: "", phone_number: "", address_line: "", city: "", state: "", pincode: "", is_default: false});
 
         // refresh
-        const updated = await fetch("http://127.0.0.1:8000/api/addresses/", {
+        const updated = await fetch("http://3.107.59.142/api/addresses/", {
           credentials: "include",
         });
         const list = await updated.json();
@@ -894,7 +894,7 @@ export default function App() {
       order_id: data.razorpay_order_id,
 
       handler: async function (response: any) {
-        await fetch("http://127.0.0.1:8000/api/payment-success/", {
+        await fetch("http://3.107.59.142/api/payment-success/", {
           method: "POST",
           credentials: "include",
           headers: {

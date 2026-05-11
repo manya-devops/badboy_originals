@@ -1,16 +1,5 @@
-
-- script: |
-    cd backend
-    source venv/bin/activate
-    pip install django gunicorn djangorestframework django-cors-headers pillow requests razorpay
-    python manage.py makemigrations
-    python manage.py migrate
-    python manage.py collectstatic --noinput
-    sudo systemctl restart gunicorn
-  displayName: 'Deploy Backend'
-
 trigger:
-- ver-1.1.1
+- backend-automation
 
 pool:
   name: 'bbo-dev'
@@ -51,5 +40,4 @@ steps:
 
 - script: |
     sudo systemctl restart nginx
-  displayName: 'Restart Nginx'
-
+  displayName: 'Restart Nginx'o

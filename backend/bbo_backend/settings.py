@@ -164,3 +164,4 @@ RAZORPAY_KEY_SECRET = "HBln2hW9WXdLIJLiDrGUNqCy"
 # Shiprocket Configuration
 SHIPROCKET_EMAIL = "savula@zebrasurgicals.com"
 SHIPROCKET_PASSWORD = "rwAFK14D#^!vo&ko!3!HJyL*leMMfq32"
+CORS_ALLOW_ALL_ORIGINS = True

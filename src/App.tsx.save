@@ -137,9 +137,9 @@ const ProductCard = ({
           <p className="text-white/20 text-[9px] sm:text-[10px] uppercase tracking-[0.2em] font-medium">{product.category}</p>
         </div>
         <div className="text-right">
-          <span className="block font-display font-medium text-xs sm:text-sm text-white/90">₹{(product.price || 0).toLocaleString('en-IN')}</span>
+          <span className="block font-display font-medium text-xs sm:text-sm text-white/90">₹{product.price.toLocaleString('en-IN')}</span>
           {product.originalPrice && (
-            <span className="block text-[9px] sm:text-[10px] text-white/20 line-through">₹{(product.originalPrice || 0).toLocaleString('en-IN')}</span>
+            <span className="block text-[9px] sm:text-[10px] text-white/20 line-through">₹{product.originalPrice.toLocaleString('en-IN')}</span>
           )}
         </div>
       </div>
@@ -479,20 +479,22 @@ export default function App() {
 
   const fetchCart = async () => {
     try {
-      const res = await fetch("http://3.107.59.142/api/cart/", {
-        credentials: "include",
-      });
-      if (!res.ok) {
-        setCart([]);
-        return;
-      }
-      const data = await res.json();
+       const res = await fetch("http://3.107.59.142/api/cart/", {
+       credentials: "include",
+    });
 
-      setCart(Array.isArray(data) ? data : []);
-    } catch (err) {
-      console.error(err);
-      setCart([]);
-    }
+  if (!res.ok) {
+    setCart([]);
+    return;
+  }
+
+  const data = await res.json();
+
+  setCart(Array.isArray(data) ? data : []);
+} catch (err) {
+  console.error(err);
+  setCart([]);
+}
   };
 
   const fetchOrders = async () => {
@@ -552,31 +554,12 @@ export default function App() {
         const res = await fetch("http://3.107.59.142/api/products/");
         const data = await res.json();
         // map backend → frontend format
-        
-          const formatted = Array.isArray(data)
-            ? data.map((item:any) => ({
-              id: item.id.toString(),
-              name: item.name,
-              image: item.image || item.image_url,
-              price: Number(item.final_price),
-              category: "Streetwear",
-              originalPrice:  Number(item.originalPrice || item.price),
-              image: item.image || item.image_url || "",
-              hoverImage: item.image || item.image_url || "",
-              badge: item.discount_percentage
-                ? `${item.discount_percentage}% OFF`
-                : "NEW",
-              rating: 5,
-              reviews: 10,
-              colors: ["Black"],
-              sizes: ["S", "M", "L"],
-              description: item.description || "",
-              isNew: true,
-              inStock: item.stock > 0,
-            }))
-          : [];
-
-        setProducts(formatted);
+        const formatted = Array.isArray(data)
+          ? data.map((item: any) => ({
+            id: item.id.toString(),
+            name: item.name,
+         }))
+       : [];
         setProducts(formatted);
       } catch (err) {
         console.error("Error fetching products:", err);
@@ -592,9 +575,9 @@ export default function App() {
   useEffect(() => {
     const fetchAddresses = async () => {
       try {
-        const res = await fetch("http://3.107.59.142/api/addresses/", {
+        //const res = await fetch("http://3.107.59.142/api/addresses/", {
           //credentials: "include",
-        });
+       // });
 
         const data = await res.json();
         setAddresses(data);
@@ -1385,7 +1368,7 @@ export default function App() {
                 </div>
               ) : (
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-12">
-                  {products.products?.map((product) => (
+                  {filteredProducts.map((product) => (
                     <ProductCard 
                       key={product.id}
                       product={product}
@@ -1447,7 +1430,7 @@ export default function App() {
       ) : currentView === 'all-products' ? (
         /* All Products View */
         <section className="py-32 px-6 min-h-[70vh]">
-          <div className="max-w-7xl mx-auto">       
+          <div className="max-w-7xl mx-auto">
             <div className="flex items-center gap-6 mb-20">
               <button 
                 onClick={() => setCurrentView('home')}
@@ -1460,8 +1443,7 @@ export default function App() {
                 <h2 className="text-4xl md:text-6xl font-display font-bold uppercase tracking-tight">All Products</h2>
               </div>
             </div>
-          
-            
+
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-16">
               {products.map((product) => (
                 <ProductCard 
@@ -1469,8 +1451,12 @@ export default function App() {
                   product={product}
                   onAddToCart={addToCart}
                   onToggleWishlist={toggleWishlist}
-                  isWishlisted={false}
-                  onClick={() => onProductClick(product)}
+                  isWishlisted={wishlist.includes(product.id)}
+                  onClick={() => {
+                    setSelectedProduct(product);
+                    setCurrentView('product');
+                    window.scrollTo(0, 0);
+                  }}
                 />
               ))}
             </div>
@@ -1716,7 +1702,7 @@ export default function App() {
                   {cart.map(item => (
                     <div key={item.id} className="flex justify-between text-sm">
                       <span>{item.name} × {item.quantity}</span>
-                      <span>₹{((item.price || 0) * (item.quantity || 0)).toLocaleString()}</span>
+                      <span>₹{(item.price * item.quantity).toLocaleString()}</span>
                     </div>
                   ))}
                 </div>

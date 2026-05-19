@@ -3,7 +3,7 @@ name: Django Deployment
 on:
   push:
     branches:
-      - main
+      - backend-automation
 
 jobs:
   deploy:

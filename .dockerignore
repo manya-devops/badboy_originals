@@ -1,5 +1,6 @@
 venv
-__pycache__
+backend/venv
 .git
-node_modules
+__pycache__
 *.pyc
+node_modules

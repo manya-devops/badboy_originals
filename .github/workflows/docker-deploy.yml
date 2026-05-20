@@ -1,0 +1,31 @@
+name: Docker Django Deployment
+
+on:
+  push:
+    branches:
+      - docker-pipeline
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
+    - name: SSH into EC2 and Deploy
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.EC2_HOST }}
+        username: ec2-user
+        key: ${{ secrets.EC2_SSH_KEY }}
+
+        script: |
+          cd ~/badboy_originals
+          git pull origin docker-pipeline
+
+          docker stop django_app || true
+          docker rm django_app || true
+
+          docker build -t django-app .
+          docker run -d -p 8000:8000 --name django_app django-app

@@ -10,3 +10,4 @@
    `npm run dev`
 retry
 deploy retry
+retry deploy

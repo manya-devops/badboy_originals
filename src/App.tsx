@@ -134,7 +134,7 @@ const ProductCard = ({
           <h3 className="font-display font-bold uppercase tracking-[0.1em] text-[11px] sm:text-xs mb-1 group-hover:text-white/80 transition-colors">
             {product.name}
           </h3>
-          <p className="text-red/20 text-[9px] sm:text-[10px] uppercase tracking-[0.2em] font-medium">{product.category}</p>
+          <p className="text-white/20 text-[9px] sm:text-[10px] uppercase tracking-[0.2em] font-medium">{product.category}</p>
         </div>
         <div className="text-right">
           <span className="block font-display font-medium text-xs sm:text-sm text-white/90">₹{(product.price || 0).toLocaleString('en-IN')}</span>

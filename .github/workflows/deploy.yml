@@ -24,7 +24,7 @@ jobs:
         script: |
           cd ~/badboy_originals
 
-          git pull origin main
+          git pull origin backend-automation
 
           cd backend
 
